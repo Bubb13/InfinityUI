@@ -1,6 +1,6 @@
 
 function Sprite_Portraits(sprite)
-	local base = EEex_UDToPtr(sprite.m_baseStats)
+	local base = EEex_UDToPtr(sprite.m_baseStats) -- CCreatureFileHeader
 	local portrait_M = EEex_ReadLString(base + 0x2C, 8) -- sprite.m_baseStats.m_portraitSmall
 	local portrait_L = EEex_ReadLString(base + 0x34, 8)
 	local portrait_H = string.sub(portrait_M,1,(#portrait_M -1)) .. "H"
@@ -8,10 +8,10 @@ function Sprite_Portraits(sprite)
 end
 
 function Sprite_Scripts(sprite)
-	local base = EEex_UDToPtr(sprite.m_baseStats)
+	local base = EEex_UDToPtr(sprite.m_baseStats) -- CCreatureFileHeader
 	local override = EEex_ReadLString(base + 0x240, 8)
 	local class    = EEex_ReadLString(base + 0x248, 8)
-	local race     = EEex_ReadLString(base + 0x280, 8)
+	local race     = EEex_ReadLString(base + 0x250, 8)
 	local general  = EEex_ReadLString(base + 0x258, 8)
 	local default  = EEex_ReadLString(base + 0x260, 8)
 	return override, class, race, general, default
@@ -20,12 +20,12 @@ end
 function Sprite_HasItem(sprite, itm_resref)
 	local slots = {}
 	itm_resref = itm_resref:upper()
-	local base = EEex_UDToPtr(sprite.m_equipment.m_items)
+	local base = EEex_UDToPtr(sprite.m_equipment.m_items) -- Array<CItem*,39>
 	for i=SLOT_AMULET,SLOT_WEAPON_4 do
 		local address = base + i*8 -- *8 because x64
-		local item = EEex_Read64(address)
+		local item = EEex_Read64(address) -- CItem
 		if (item ~= 0) then
-			local resref = EEex_ReadLString(item + 0x08 + 0x08, 8)
+			local resref = EEex_ReadLString(item + 0x08 + 0x08, 8) -- CResRef
 			if resref:upper() == itm_resref then
 				slots[#slots +1] = i
 			end
@@ -37,13 +37,13 @@ end
 function Sprite_HasItem_InSlot(sprite, itm_resref, slots)
 
 	itm_resref = itm_resref:upper()
-	local base = EEex_UDToPtr(sprite.m_equipment.m_items)
+	local base = EEex_UDToPtr(sprite.m_equipment.m_items) -- Array<CItem*,39>
 	for s=1,#slots do
 		local i =slots[s]
 		local address = base + i*8 -- *8 because x64
-		local item = EEex_Read64(address)
+		local item = EEex_Read64(address) -- CItem
 		if (item ~= 0) then
-			local resref = EEex_ReadLString(item + 0x08 + 0x08, 8)
+			local resref = EEex_ReadLString(item + 0x08 + 0x08, 8) -- CResRef
 			if resref:upper() == itm_resref then return true end
 		end
 	end
@@ -53,70 +53,70 @@ end
 
 
 function Sprite_Items(sprite)
-local base = EEex_UDToPtr(sprite.m_equipment.m_items)
-local selected_weapon_slot = sprite.m_equipment.m_selectedWeapon
-local items = {}
-for k,v in pairs(SLOTS) do
-	local i=v.id
-	local address = base + i*8 -- *8 because x64
-	local item = EEex_Read64(address)
-	if (item ~= 0) then
-		local resref = EEex_ReadLString(item + 0x08 + 0x08, 8)
-		if resref then resref = resref:upper() end
+	local base = EEex_UDToPtr(sprite.m_equipment.m_items) -- Array<CItem*,39>
+	local selected_weapon_slot = sprite.m_equipment.m_selectedWeapon
+	local items = {}
+	for k,v in pairs(SLOTS) do
+		local i=v.id
+		local address = base + i*8 -- *8 because x64
+		local item = EEex_Read64(address) -- CItem
+		if (item ~= 0) then
+			local resref = EEex_ReadLString(item + 0x08 + 0x08, 8) -- CResRef
+			if resref then resref = resref:upper() end
 
-		local equip_flags = EEex_Read32(item + 0x24)
-		local qty_or_charge_1 = EEex_Read16(item + 0x1C)
-		local qty_or_charge_2 = EEex_Read16(item + 0x1C + 0x2)
-		local qty_or_charge_3 = EEex_Read16(item + 0x1C + 0x4)
-		local charge_2 = EEex_Read16(item + 0x1C + 2)
-		local charge_3 = EEex_Read16(item + 0x1C + 4)
+			local equip_flags = EEex_Read32(item + 0x24)
+			local qty_or_charge_1 = EEex_Read16(item + 0x1C)
+			local qty_or_charge_2 = EEex_Read16(item + 0x1C + 0x2)
+			local qty_or_charge_3 = EEex_Read16(item + 0x1C + 0x4)
+			local charge_2 = EEex_Read16(item + 0x1C + 2)
+			local charge_3 = EEex_Read16(item + 0x1C + 4)
 
-		local res = EEex_Resource_Demand(resref,"itm") -- K4_printTable(res)
-		if res ~= nil then
-			local item_file = EEex_UDToPtr(res)
-			local item_name = Infinity_FetchString(EEex_Read32(item_file + 0x0C))
+			local res = EEex_Resource_Demand(resref,"itm") -- K4_printTable(res)
+			if res ~= nil then
+				local item_file = EEex_UDToPtr(res) -- Item_Header_st
+				local item_name = Infinity_FetchString(EEex_Read32(item_file + 0x0C))
 
-			local item_category = EEex_Read16(item_file + 0x1C)
-			local qty = My_Ternary(item_category ==  5 -- Arrows
-								or item_category ==  9 -- Potion
-								or item_category == 11 -- Scroll
-								or item_category == 14 -- Bullets
-								or item_category == 31 -- Bolts
-								or item_category == 33 -- Gold
-								or item_category == 34 -- Gems
-								,qty_or_charge_1
-								,qty_or_charge_1)
+				local item_category = EEex_Read16(item_file + 0x1C)
+				local qty = My_Ternary(item_category ==  5 -- Arrows
+									or item_category ==  9 -- Potion
+									or item_category == 11 -- Scroll
+									or item_category == 14 -- Bullets
+									or item_category == 31 -- Bolts
+									or item_category == 33 -- Gold
+									or item_category == 34 -- Gems
+									,qty_or_charge_1
+									,qty_or_charge_1)
 
-			--Infinity_DisplayString(sprite_name .. " / " .. SLOTS[i +1] .. " : " .. resref .. " // ^y" .. item_name .. "^- (" .. qty .. ") <" .. equip_flags .. "> " .. unstealable .. undroppable .. item_undroppable .. slot_unstealable .. " " .. charge_2 .. " " .. charge_3)
+				--Infinity_DisplayString(sprite_name .. " / " .. SLOTS[i +1] .. " : " .. resref .. " // ^y" .. item_name .. "^- (" .. qty .. ") <" .. equip_flags .. "> " .. unstealable .. undroppable .. item_undroppable .. slot_unstealable .. " " .. charge_2 .. " " .. charge_3)
 
-			local name = item_name
-			local desc_strref = EEex_Read32(item_file + 0x54)
-			local desc = Infinity_FetchString(desc_strref)
-			if desc == "" then desc = Infinity_FetchString(EEex_Read32(item_file + 0x50)) end
+				local name = item_name
+				local desc_strref = EEex_Read32(item_file + 0x54)
+				local desc = Infinity_FetchString(desc_strref)
+				if desc == "" then desc = Infinity_FetchString(EEex_Read32(item_file + 0x50)) end
 
-			local max_in_stack = EEex_Read16(item_file + 0x38)			
-			if max_in_stack == 1 then qty = 1 end
-			local obj = {
-				resref = resref,
-				item_name = item_name,
-				name = name,
-				qty = qty,
-				qty_2 = qty_or_charge_2,
-				qty_3 = qty_or_charge_3,
-				slot = v,
-				is_weapon_selected = selected_weapon_slot == v.id,
-				icon = EEex_ReadLString(item_file + 0x3A, 8),
-				text = "^D"..v.name .. ": ^-" .. My_Ternary(qty > 1, "^t" .. tostring(qty) .. "^- ", "") .. name,
-				descPicture = EEex_ReadLString(item_file + 0x58, 8),
-				description = desc,
-				weight = EEex_Read16(item_file + 0x4C)
-				}
-			items[#items +1] = obj
-		end -- // if res not nil
+				local max_in_stack = EEex_Read16(item_file + 0x38)			
+				if max_in_stack == 1 then qty = 1 end
+				local obj = {
+					resref = resref,
+					item_name = item_name,
+					name = name,
+					qty = qty,
+					qty_2 = qty_or_charge_2,
+					qty_3 = qty_or_charge_3,
+					slot = v,
+					is_weapon_selected = selected_weapon_slot == v.id,
+					icon = EEex_ReadLString(item_file + 0x3A, 8),
+					text = "^D"..v.name .. ": ^-" .. My_Ternary(qty > 1, "^t" .. tostring(qty) .. "^- ", "") .. name,
+					descPicture = EEex_ReadLString(item_file + 0x58, 8),
+					description = desc,
+					weight = EEex_Read32(item_file + 0x4C)
+					}
+				items[#items +1] = obj
+			end -- // if res not nil
+		end
 	end
-end
 
-return items
+	return items
 end
 
 
@@ -168,7 +168,7 @@ function Sprite_Timed_Effects(sprite)
 			if not abilityData then return end -- Continue EEex_Utility_IterateCPtrList
 		end
 
-		local spell_file = EEex_UDToPtr(spellHeader)
+		local spell_file = EEex_UDToPtr(spellHeader) -- Spell_Header_st
 		local spellName = Infinity_FetchString(spellHeader.genericName)
 		if spellName == "" then
 			local strref = EEex_Read32(spell_file + 0x0C)
@@ -191,7 +191,7 @@ function Sprite_Timed_Effects(sprite)
 		listData.spellName = spellName
 		listData.duration = effect.m_duration
 		listData.opcode = effect.m_effectId
-		listData.power = effect.m_spellLevelq
+		listData.power = effect.m_spellLevel
 		listData.p1 = effect.m_effectAmount
 		listData.p2 = effect.m_dWFlags
 		listData.secondary_type = effect.m_secondaryType

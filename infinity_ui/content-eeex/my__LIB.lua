@@ -5,7 +5,7 @@ function my_Show_Description(resref, restype) -- itm or spl
 
 	if item_res == nil then return end
 
-	local item_file = EEex_UDToPtr(item_res)
+	local item_file = EEex_UDToPtr(item_res) -- Item_Header_st or Spell_Header_st
 	if item_file == 0 then return end
 
 	local desc_picture = EEex_ReadLString(item_file + 0x58,8)

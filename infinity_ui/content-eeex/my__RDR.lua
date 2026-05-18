@@ -64,12 +64,12 @@ function my_screen_radar_Inspect_sprite(sprite_row)
 	rgRadarSelectedCreId = sprite.m_id
 	
 	-- Portrait
-	local base = EEex_UDToPtr(sprite.m_baseStats)
+	local base = EEex_UDToPtr(sprite.m_baseStats) -- CCreatureFileHeader
 	local portrait = EEex_ReadLString(base + 0x2C, 8) -- sprite.m_baseStats.m_portraitSmall
 	my_radar_sprite.portrait = My_Ternary(portrait and portrait:upper() ~= "NONE", portrait, nil)
 
 	-- Now, read sprite stats
-	local base = EEex_UDToPtr(sprite.m_resref)
+	local base = EEex_UDToPtr(sprite.m_resref) -- CResRef
 	local resref = EEex_ReadLString(base + 0x00, 8)
 
 	result = sprite:getName():upper() .. " // " .. resref .. "\n"
@@ -380,7 +380,7 @@ function my_screen_radar_Search_sprites()
 				--raceIDS:free()
 	
 				-- Portrait
-				local base = EEex_UDToPtr(sprite.m_baseStats)
+				local base = EEex_UDToPtr(sprite.m_baseStats) -- CCreatureFileHeader
 				local portrait = EEex_ReadLString(base + 0x2C, 8) -- sprite.m_baseStats.m_portraitSmall
 				sprite.portrait = My_Ternary(portrait and portrait:upper() ~= "NONE", portrait, nil)
 				
