@@ -10200,7 +10200,7 @@ function rgGetCombatStatsString(charId)
 		
 		
 	else 
-		out = TEXT_inventoryError
+		out = body .. TEXT_inventoryError
 	end
 	
 	return out
@@ -10899,13 +10899,13 @@ function rgUnlockInvId()
 end
 
 function rgGetInvPaperdollBam()
-	if rgGameEngine == 2 then
+	--if rgGameEngine == 2 then
 		for i=1,#rgIpNpc,1 do
 			if rgIpNpc[i].name:lower() == t(characters[rgInvId].name):lower() then 
 				return 'rgdipnpc'
 			end
 		end
-	end
+	--end
 	
 	local bam = 'rgdip'
 	if characters[rgInvId].gender == 15729635 then
@@ -10989,15 +10989,15 @@ end
 
 function rgGetInvPaperdollSeq()
 	local ret = 0
-	if rgGameEngine == 2 then
+	--if rgGameEngine == 2 then
 		for i=1,#rgIpNpc,1 do
 			if rgIpNpc[i].name:lower() == t(characters[rgInvId].name):lower() then 
 				return rgIpNpc[i].frame
 			end
 		end
-	end
+	--end
 	for i=1,#rgIpAppearance,1 do
-		if Infinity_FetchString(rgIpAppearance[i].strref):lower() == rgGetClassLevelInvString(1):lower() then 
+		if rgGetGameEngineString(rgIpAppearance[i].strref[1],rgIpAppearance[i].strref[2],rgIpAppearance[i].strref[3],rgIpAppearance[i].strref[4]):lower() == rgGetClassLevelInvString(1):lower() then 
 			ret = rgIpAppearance[i].level
 			break
 		end
@@ -11008,7 +11008,7 @@ end
 function rgGetInvPaperdollFrame()
 	local ret = 0
 	local isRobe = 0
-	if rgGetInvPaperdollBam() == 'rgdipnpc' and (rgGetInvPaperdollSeq() == 0 or rgGetInvPaperdollSeq() == 3 or rgGetInvPaperdollSeq() == 7 or rgGetInvPaperdollSeq() == 12) then
+	if rgGetInvPaperdollBam() == 'rgdipnpc' and (rgGetInvPaperdollSeq() == 0 or rgGetInvPaperdollSeq() == 3 or rgGetInvPaperdollSeq() == 7 or rgGetInvPaperdollSeq() == 12 or rgGetInvPaperdollSeq() >= 18) then
 		isRobe = 1
 	end
 	if rgGetInvPaperdollBam() ~= 'rgdipnpc' and rgGetInvPaperdollSeq() == 3 then
@@ -11018,7 +11018,7 @@ function rgGetInvPaperdollFrame()
 	if isRobe == 1 then
 	ret = 0
 		for i=1,#rgIpRobe,1 do
-			if Infinity_FetchString(rgIpRobe[i].strref) == characters[rgInvId].equipment.armor.item.name then 
+			if rgGetGameEngineString(rgIpRobe[i].strref[1],rgIpRobe[i].strref[2],rgIpRobe[i].strref[3],rgIpRobe[i].strref[4]) == characters[rgInvId].equipment.armor.item.name then 
 				ret = rgIpRobe[i].level
 				break
 			end
@@ -11026,7 +11026,7 @@ function rgGetInvPaperdollFrame()
 	else
 	ret = 0
 		for i=1,#rgIpArmor,1 do
-			if Infinity_FetchString(rgIpArmor[i].strref) == characters[rgInvId].equipment.armor.item.name then 
+			if rgGetGameEngineString(rgIpArmor[i].strref[1],rgIpArmor[i].strref[2],rgIpArmor[i].strref[3],rgIpArmor[i].strref[4]) == characters[rgInvId].equipment.armor.item.name then 
 				ret = rgIpArmor[i].level
 				break
 			end
@@ -11069,7 +11069,7 @@ function rgGetInvShield()
     end
 	
 	for i=1,#rgIpShield,1 do
-		if Infinity_FetchString(rgIpShield[i].strref) == characters[rgInvId].equipment.shield.item.name then 
+		if rgGetGameEngineString(rgIpShield[i].strref[1],rgIpShield[i].strref[2],rgIpShield[i].strref[3],rgIpShield[i].strref[4]) == characters[rgInvId].equipment.shield.item.name then 
 			ret = rgIpShield[i].level
 			break
 		end
@@ -11085,12 +11085,12 @@ function rgGetInvPaperdollOffhandFrame()
 	if characters[rgInvId].damage.minOffhand then
 		local name = characters[rgInvId].equipment.shield.item.name
 		for i=1,#rgIpWeaponSpecial,1 do
-			if Infinity_FetchString(rgIpWeaponSpecial[i].strref) == name then 
+			if rgGetGameEngineString(rgIpWeaponSpecial[i].strref[1],rgIpWeaponSpecial[i].strref[2],rgIpWeaponSpecial[i].strref[3],rgIpWeaponSpecial[i].strref[4]) == name then 
 				return rgIpWeaponSpecial[i].frameOffhand
 			end
 		end
 		local desc = characters[rgInvId].equipment.shield.item.description
-		local startIdx = string.find(desc, "THAC0")
+		local startIdx = string.find(desc, getUiString('RG_ITM_COMP_ST'))
 		
 		if not startIdx then
 			startIdx = 0
@@ -11099,7 +11099,8 @@ function rgGetInvPaperdollOffhandFrame()
 		local substring = string.sub(desc, startIdx)
 		
 		for _, item in ipairs(rgIpWeaponOffHand) do
-			local fetchedString = Infinity_FetchString(item.strref)
+			--local fetchedString = Infinity_FetchString(item.strref)
+			local fetchedString = rgGetGameEngineString(item.strref[1],item.strref[2],item.strref[3],item.strref[4])
 			local cleanDetails = string.lower(substring)
 			local cleanFetched = string.lower(fetchedString or "")
 			
@@ -11115,12 +11116,12 @@ end
 function rgGetInvPaperdollWeaponFrame()
 	local nameString = rgGetWeaponNameFromDetails()
 	for i=1,#rgIpWeaponSpecial,1 do
-		if Infinity_FetchString(rgIpWeaponSpecial[i].strref) == nameString then 
+		if rgGetGameEngineString(rgIpWeaponSpecial[i].strref[1],rgIpWeaponSpecial[i].strref[2],rgIpWeaponSpecial[i].strref[3],rgIpWeaponSpecial[i].strref[4]) == nameString then 
 			return rgIpWeaponSpecial[i].frame
 		end
 	end
 	local inputString = rgGetWeaponDescriptionFromDetails()
-    local startIdx = string.find(inputString, "THAC0")
+    local startIdx = string.find(inputString, getUiString('RG_ITM_COMP_ST'))
     
     if not startIdx then
         startIdx = 0
@@ -11129,7 +11130,7 @@ function rgGetInvPaperdollWeaponFrame()
 	local substring = string.sub(inputString, startIdx)
     
     for _, item in ipairs(rgIpWeapon) do
-        local fetchedString = Infinity_FetchString(item.strref)
+        local fetchedString = rgGetGameEngineString(item.strref[1],item.strref[2],item.strref[3],item.strref[4])
         local cleanDetails = string.lower(substring)
 		local cleanFetched = string.lower(fetchedString or "")
 		
